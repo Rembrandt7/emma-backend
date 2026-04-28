@@ -156,10 +156,28 @@ export async function procesarMensaje(telefono, mensajeTexto) {
       .order('creado_en', { ascending: false })
       .limit(10);
 
-    const historial = (historialDB || []).reverse().map(m => ({
-      role: m.direccion === 'entrante' ? 'user' : 'model',
-      parts: [{ text: m.contenido }]
-    }));
+    const historial = (() => {
+      const msgs = (historialDB || []).reverse().map(m => ({
+        role: m.direccion === 'entrante' ? 'user' : 'model',
+        parts: [{ text: m.contenido || '' }]
+      })).filter(m => m.parts[0].text.trim() !== '');
+
+      // Gemini requiere que el historial empiece con 'user' y sea alternado
+      // Eliminamos desde el inicio hasta encontrar el primer 'user'
+      let inicio = msgs.findIndex(m => m.role === 'user');
+      const historialFiltrado = inicio >= 0 ? msgs.slice(inicio) : [];
+
+      // Aseguramos que sea alternado (user, model, user, model...)
+      const alternado = [];
+      let expectedRole = 'user';
+      for (const msg of historialFiltrado) {
+        if (msg.role === expectedRole) {
+          alternado.push(msg);
+          expectedRole = expectedRole === 'user' ? 'model' : 'user';
+        }
+      }
+      return alternado;
+    })();
 
     const model = genAI.getGenerativeModel({
       model: 'gemini-3.1-flash-lite-preview',
