@@ -1,4 +1,4 @@
-﻿import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { supabase, getAllReglas } from '../config/supabase.js';
 import dotenv from 'dotenv';
 
@@ -162,7 +162,7 @@ export async function procesarMensaje(telefono, mensajeTexto) {
     }));
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-3.1-flash-lite-preview',
+      model: 'gemini-2.0-flash',
       systemInstruction: systemPrompt
     });
 
