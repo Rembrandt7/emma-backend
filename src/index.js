@@ -63,6 +63,35 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Diagnóstico de variables (temporal)
+app.get('/diag', async (req, res) => {
+  const vars = {
+    TWILIO_ACCOUNT_SID:  process.env.TWILIO_ACCOUNT_SID ? '✅ ' + process.env.TWILIO_ACCOUNT_SID.substring(0,8) : '❌ FALTA',
+    TWILIO_AUTH_TOKEN:   process.env.TWILIO_AUTH_TOKEN  ? '✅ ***' : '❌ FALTA',
+    TWILIO_FROM:         process.env.TWILIO_WHATSAPP_FROM || '❌ FALTA',
+    GEMINI_API_KEY:      process.env.GEMINI_API_KEY ? '✅ ' + process.env.GEMINI_API_KEY.substring(0,12) : '❌ FALTA',
+    SUPABASE_URL:        process.env.SUPABASE_URL ? '✅ OK' : '❌ FALTA',
+    SUPABASE_ANON_KEY:   process.env.SUPABASE_ANON_KEY ? '✅ OK' : '❌ FALTA',
+    GOOGLE_DRIVE_FOLDER: process.env.GOOGLE_DRIVE_FOLDER_ID || '❌ FALTA',
+    NODE_ENV:            process.env.NODE_ENV || 'development',
+  };
+
+  // Probar Gemini
+  let geminiTest = '⏳ no probado';
+  try {
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const result = await model.generateContent('Responde solo "OK"');
+    geminiTest = '✅ ' + result.response.text().trim();
+  } catch (e) {
+    geminiTest = '❌ ' + e.message;
+  }
+
+  res.json({ variables: vars, gemini: geminiTest });
+});
+
+
 // ── Cron Jobs ──────────────────────────────────
 
 // Reporte diario a las 8:00 AM (hora MX)
